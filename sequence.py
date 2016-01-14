@@ -152,6 +152,7 @@ def skipgrams(sequence, vocabulary_size,
     '''
     couples = []
     labels = []
+    ng_tabel_size = len(ng_sampling_table)
     for i, wi in enumerate(sequence):
         if not wi:
             continue
@@ -159,9 +160,9 @@ def skipgrams(sequence, vocabulary_size,
             if sampling_table[wi] < random.random():
                 continue
 
-        window_reduce = random.randint(0, window_size)
-        window_start = max(0, i-window_size+window_reduce)
-        window_end = min(len(sequence), i+window_size+1-window_reduce)
+        real_window = random.randint(0, window_size)
+        window_start = max(0, i-real_window)
+        window_end = min(len(sequence), i+real_window+1)
         for j in range(window_start, window_end):
             if j != i:
                 wj = sequence[j]
@@ -172,20 +173,32 @@ def skipgrams(sequence, vocabulary_size,
                     labels.append([0,1])
                 else:
                     labels.append(1)
+                sample_num = 0
+                while sample_num < negative_samples:
+                    neg_word = ng_sampling_table[random.randint(0, ng_tabel_size-1)]
+                    if neg_word == wi:
+                        continue
+                    couples.append([neg_word, wj])
+                    if categorical:
+                        labels.append([1,0])
+                    else:
+                        labels.append(0)
+                    sample_num += 1
 
-    if negative_samples > 0:
-        if ng_sampling_table is None:
-            ng_sampling_table = [1 for i in range(vocabulary_size)]
-        nb_negative_samples = int(len(labels) * negative_samples)
-        words = [c[0] for c in couples]
-        random.shuffle(words)
-        ng_tabel_size = len(ng_sampling_table)
 
-        couples += [[words[i%len(words)], ng_sampling_table[random.randint(1, ng_tabel_size)]] for i in range(nb_negative_samples)]
-        if categorical:
-            labels += [[1,0]]*nb_negative_samples
-        else:
-            labels += [0]*nb_negative_samples
+    # if negative_samples > 0:
+    #     if ng_sampling_table is None:
+    #         ng_sampling_table = [1 for i in range(vocabulary_size)]
+    #     nb_negative_samples = int(len(labels) * negative_samples)
+    #     words = [c[0] for c in couples]
+    #     random.shuffle(words)
+    #     ng_tabel_size = len(ng_sampling_table)
+    #
+    #     couples += [[words[i%len(words)], ng_sampling_table[random.randint(0, ng_tabel_size-1)]] for i in range(nb_negative_samples)]
+    #     if categorical:
+    #         labels += [[1,0]]*nb_negative_samples
+    #     else:
+    #         labels += [0]*nb_negative_samples
 
     if shuffle:
         seed = random.randint(0,10e6)

@@ -50,7 +50,7 @@ import time
 last_time = time.time()
 max_features = 500000  # vocabulary size: top 500,000 most common words in data
 skip_top = 10  # ignore top 100 most common words
-nb_epoch = 1
+nb_epoch = 5
 dim_proj = 50  # embedding space dimension
 winsize = 4
 neg = 5.
@@ -67,7 +67,7 @@ model_save_fname = "HN_skipgram_model.pkl"
 tokenizer_fname = "HN_tokenizer.pkl"
 
 #data_path = os.path.expanduser("~/")+"HNCommentsAll.1perline.json"
-data_path = os.path.expanduser("~/")+"word2vec/data/wiki/"+"wiki_eng_cont.part.aa.filter"
+data_path = os.path.expanduser("~/")+"word2vec/data/wiki/"+"wiki_aa_100000"
 
 # text preprocessing utils
 html_tags = re.compile(r'<.*?>')
@@ -128,10 +128,9 @@ if train_model:
         model.compile(loss='mse', optimizer='rmsprop')
 
     sampling_table = sequence.make_sampling_table(tokenizer)
-    ng_sampling_table = sequence.make_neg_table(tokenizer,table_size=20)
+    ng_sampling_table = sequence.make_neg_table(tokenizer)
     print(sampling_table)
     print(ng_sampling_table)
-    print('==============succses================')
 
     for e in range(nb_epoch):
         print('-'*40)
@@ -156,11 +155,11 @@ if train_model:
             if couples_batch:
                 # one gradient update per sentence (one sentence = a few 1000s of word couples)
                 X = np.array(couples_batch, dtype="int32")
-                loss = model.fit(X, labels_batch,batch_size=2000, nb_epoch=1, verbose=0)
+                loss = model.fit(X, labels_batch,batch_size=1000, nb_epoch=1, verbose=0)
                 losses.append(loss)
                 if len(losses) % 100 == 0:
                     print(i)
-                    progbar.update(i, values=[("loss", np.mean(losses))])
+                    #progbar.update(i, values=[("loss", np.mean(losses))])
                     losses = []
                 samples_seen += len(labels)
                 couples_batch = []
